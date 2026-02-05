@@ -252,7 +252,7 @@ function injectTemporaryPanel() {
 
     const dummyPanel = document.createElement('div');
     dummyPanel.id = 'tm-layout-fix-panel';
-    dummyPanel.style.width = '300px';
+    dummyPanel.style.width = '1px';
     dummyPanel.style.height = '100vh';
     dummyPanel.style.flexShrink = '0';
     dummyPanel.style.backgroundColor = 'transparent';
