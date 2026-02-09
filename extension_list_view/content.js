@@ -6,7 +6,8 @@ const defaultSettings = {
     thumbnailWidth: 260,
     titleFontSize: 13, // pt
     metaFontSize: 10,  // pt
-    notifyWidth: 150   // px
+    notifyWidth: 150,   // px
+    highlightLinks: true
 };
 
 // ==========================================================================
@@ -19,6 +20,8 @@ function applySettings(settings) {
     root.style.setProperty('--title-font-size', settings.titleFontSize + 'pt');
     root.style.setProperty('--meta-font-size', settings.metaFontSize + 'pt');
     root.style.setProperty('--notify-width', settings.notifyWidth + 'px');
+    const linkColor = settings.highlightLinks ? '#3ea6ff' : 'inherit';
+    root.style.setProperty('--desc-link-color', linkColor);
 }
 
 // Load settings on startup
@@ -97,6 +100,27 @@ function decodeHtmlEntities(str) {
         .replace(/&#39;/g, "'");
 }
 
+// ==========================================================================
+// LOGIC: LINKIFY DESCRIPTIONS
+// ==========================================================================
+function linkify(text) {
+    if (!text) return '';
+    
+    let safeText = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return safeText.replace(urlRegex, function(url) {
+        // [CHANGED] color is now var(--desc-link-color)
+        return `<a href="${url}" target="_blank" style="color: var(--desc-link-color); text-decoration: none; z-index: 200; position: relative;">${url}</a>`;
+    });
+}
+
+
 function processVideoDescriptions() {
     if (!isTargetPage()) return;
 
@@ -169,7 +193,17 @@ function processVideoDescriptions() {
                     // Create Text Div
                     const descDiv = document.createElement('div');
                     descDiv.className = 'custom-description';
-                    descDiv.textContent = fullDescText; 
+
+                    // USE LINKIFY + INNERHTML
+                    descDiv.innerHTML = linkify(fullDescText);
+
+                    // STOP PROPAGATION: Prevent clicking the link from opening the video
+                    descDiv.addEventListener('click', (e) => {
+                        if (e.target.tagName === 'A') {
+                            e.stopPropagation();
+                        }
+                    });
+
                     wrapper.appendChild(descDiv);
 
                     // Add "Show More" Button

@@ -4,7 +4,8 @@ const defaults = {
     thumbnailWidth: 260,
     titleFontSize: 13, // pt
     metaFontSize: 10,  // pt
-    notifyWidth: 150   // px
+    notifyWidth: 150,   // px
+    highlightLinks: true
 };
 
 // Elements
@@ -18,7 +19,8 @@ const inputs = {
     metaFontSize: document.getElementById('metaFontSize'),
     metaFontSizeSlider: document.getElementById('metaFontSizeSlider'),
     notifyWidth: document.getElementById('notifyWidth'),
-    notifyWidthSlider: document.getElementById('notifyWidthSlider')
+    notifyWidthSlider: document.getElementById('notifyWidthSlider'),
+    highlightLinks: document.getElementById('highlightLinks')
 };
 
 // Helper: Get current values from DOM
@@ -28,8 +30,17 @@ function getCurrentSettings() {
         thumbnailWidth: inputs.thumbnailWidth.value,
         titleFontSize: inputs.titleFontSize.value,
         metaFontSize: inputs.metaFontSize.value,
-        notifyWidth: inputs.notifyWidth.value
+        notifyWidth: inputs.notifyWidth.value,
+        highlightLinks: inputs.highlightLinks.checked
     };
+}
+
+// Highlight Links Toggle
+if (inputs.highlightLinks) {
+    inputs.highlightLinks.addEventListener('change', () => {
+        sendToTab();
+        saveToStorage();
+    });
 }
 
 // Helper: Send settings to active tab (Live Preview)
@@ -106,8 +117,15 @@ setupControl(inputs.notifyWidth, inputs.notifyWidthSlider);
 document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.sync.get(defaults, (items) => {
         for (const key in items) {
-            if (inputs[key]) inputs[key].value = items[key];
-            if (inputs[key + 'Slider']) inputs[key + 'Slider'].value = items[key];
+            // Handle Checkbox
+            if (key === 'highlightLinks' && inputs[key]) {
+                inputs[key].checked = items[key];
+            }
+            // Handle Inputs/Sliders
+            else {
+                if (inputs[key]) inputs[key].value = items[key];
+                if (inputs[key + 'Slider']) inputs[key + 'Slider'].value = items[key];
+            }
         }
     });
 });
@@ -116,8 +134,15 @@ document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('resetBtn').addEventListener('click', () => {
     chrome.storage.sync.set(defaults, () => {
         for (const key in defaults) {
-            if (inputs[key]) inputs[key].value = defaults[key];
-            if (inputs[key + 'Slider']) inputs[key + 'Slider'].value = defaults[key];
+            // Handle Checkbox
+            if (key === 'highlightLinks' && inputs[key]) {
+                inputs[key].checked = defaults[key];
+            }
+            // Handle Inputs/Sliders
+            else {
+                if (inputs[key]) inputs[key].value = defaults[key];
+                if (inputs[key + 'Slider']) inputs[key + 'Slider'].value = defaults[key];
+            }
         }
         sendToTab();
     });
