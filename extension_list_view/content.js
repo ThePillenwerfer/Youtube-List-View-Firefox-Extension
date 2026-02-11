@@ -1,27 +1,73 @@
 const SHIFT_DELAY = 600;
 
 // Default config matches styles.css fallback
+// [UPDATED] Replaced single 'viewMode' with separate keys
 const defaultSettings = {
     listContainerWidth: 90,
     thumbnailWidth: 260,
     titleFontSize: 13, // pt
     metaFontSize: 10,  // pt
     notifyWidth: 150,   // px
-    highlightLinks: true
+    highlightLinks: true,
+    viewModeHome: 'list', // Default for Home
+    viewModeSubs: 'list'  // Default for Subscriptions
 };
+
+// Global cache to handle navigation changes instantly
+let cachedSettings = { ...defaultSettings };
+
+// State to track view mode status
+let isListViewEnabled = true;
 
 // ==========================================================================
 // LOGIC: APPLY USER SETTINGS (CSS VARIABLES)
 // ==========================================================================
 function applySettings(settings) {
+    // Update Cache
+    cachedSettings = { ...defaultSettings, ...settings };
+
     const root = document.documentElement;
     root.style.setProperty('--list-container-width', settings.listContainerWidth + '%');
     root.style.setProperty('--thumbnail-width', settings.thumbnailWidth + 'px');
     root.style.setProperty('--title-font-size', settings.titleFontSize + 'pt');
     root.style.setProperty('--meta-font-size', settings.metaFontSize + 'pt');
     root.style.setProperty('--notify-width', settings.notifyWidth + 'px');
+
     const linkColor = settings.highlightLinks ? '#3ea6ff' : 'inherit';
     root.style.setProperty('--desc-link-color', linkColor);
+
+    // [UPDATED] Determine which mode to use based on current page
+    const currentModeKey = getViewModeKey();
+    const currentViewMode = settings[currentModeKey]; // 'grid' or 'list'
+
+    if (currentViewMode === 'grid') {
+        disableListView();
+    } else {
+        enableListView();
+    }
+}
+
+function enableListView() {
+    isListViewEnabled = true;
+    document.documentElement.classList.add('list-view-active');
+    updateToggleButtonsUI();
+    // Trigger a reflow fix immediately when switching
+    if (isTargetPage()) injectTemporaryPanel();
+}
+
+function disableListView() {
+    isListViewEnabled = false;
+    document.documentElement.classList.remove('list-view-active');
+    updateToggleButtonsUI();
+}
+
+// [NEW] Helper to get the correct storage key based on URL
+function getViewModeKey() {
+    if (window.location.href.includes('/feed/subscriptions')) {
+        return 'viewModeSubs';
+    }
+    // Default to Home logic for / and /featured
+    return 'viewModeHome'; 
 }
 
 // Load settings on startup
@@ -45,15 +91,137 @@ function isTargetPage() {
 }
 
 // ==========================================================================
+// LOGIC: INJECT TOGGLE BUTTONS (GRID / LIST) - DYNAMIC PLACEMENT
+// ==========================================================================
+function injectViewToggle() {
+    // 1. Create the container if it doesn't exist (in memory)
+    let container = document.getElementById('view-toggle-container');
+    
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'view-toggle-container';
+
+        // Grid Icon SVG
+        const gridIcon = `
+            <svg viewBox="0 0 24 24" height="24" width="24">
+                <rect x="2" y="4" width="5" height="7" rx="1"></rect>
+                <rect x="2" y="13" width="5" height="7" rx="1"></rect>
+                <rect x="9.5" y="4" width="5" height="7" rx="1"></rect>
+                <rect x="9.5" y="13" width="5" height="7" rx="1"></rect>
+                <rect x="17" y="4" width="5" height="7" rx="1"></rect>
+                <rect x="17" y="13" width="5" height="7" rx="1"></rect>
+            </svg>
+        `;
+
+        // List Icon SVG
+        const listIcon = `
+            <svg viewBox="0 0 24 24" height="24" width="24">
+                <rect x="2" y="4" width="5" height="4" rx="1"></rect>
+                <rect x="9" y="4" width="13" height="4" rx="1"></rect>
+                
+                <rect x="2" y="10" width="5" height="4" rx="1"></rect>
+                <rect x="9" y="10" width="13" height="4" rx="1"></rect>
+                
+                <rect x="2" y="16" width="5" height="4" rx="1"></rect>
+                <rect x="9" y="16" width="13" height="4" rx="1"></rect>
+            </svg>
+        `;
+
+        // Grid Button
+        const gridBtn = document.createElement('button');
+        gridBtn.className = 'view-toggle-btn';
+        gridBtn.id = 'toggle-grid-btn';
+        gridBtn.innerHTML = gridIcon;
+        gridBtn.title = 'Grid View';
+        gridBtn.onclick = (e) => {
+            e.stopPropagation(); 
+            disableListView();
+            
+            // [UPDATED] Save to the specific key (Home or Subs)
+            const key = getViewModeKey();
+            cachedSettings[key] = 'grid'; // Update local cache
+            chrome.storage.sync.set({ [key]: 'grid' });
+        };
+
+        // List Button
+        const listBtn = document.createElement('button');
+        listBtn.className = 'view-toggle-btn';
+        listBtn.id = 'toggle-list-btn';
+        listBtn.innerHTML = listIcon;
+        listBtn.title = 'List View';
+        listBtn.onclick = (e) => {
+            e.stopPropagation();
+            enableListView();
+
+            // [UPDATED] Save to the specific key (Home or Subs)
+            const key = getViewModeKey();
+            cachedSettings[key] = 'list'; // Update local cache
+            chrome.storage.sync.set({ [key]: 'list' });
+        };
+
+        container.appendChild(gridBtn);
+        container.appendChild(listBtn);
+    }
+
+    // 2. Determine where to place the container based on the current page
+    let targetParent = null;
+
+    if (window.location.href.includes('/feed/subscriptions')) {
+        // --- SUBSCRIPTIONS PAGE ---
+        const subBtn = document.querySelector('ytd-shelf-renderer #subscribe-button');
+        if (subBtn) {
+            targetParent = subBtn.parentElement; 
+        }
+        container.classList.remove('home-header-mode');
+
+    } else if (window.location.pathname === '/' || window.location.href.includes('/featured')) {
+        // --- HOME PAGE ---
+        const chipBar = document.querySelector('ytd-feed-filter-chip-bar-renderer');
+        
+        if (chipBar) {
+            targetParent = chipBar;
+            container.classList.add('home-header-mode');
+            
+            if (getComputedStyle(chipBar).position === 'static') {
+                chipBar.style.position = 'relative';
+            }
+        }
+    }
+
+    // 3. Insert or Move the container
+    if (targetParent) {
+        if (container.parentElement !== targetParent) {
+            targetParent.appendChild(container);
+            updateToggleButtonsUI(); 
+        }
+    }
+}
+
+function updateToggleButtonsUI() {
+    const gridBtn = document.getElementById('toggle-grid-btn');
+    const listBtn = document.getElementById('toggle-list-btn');
+    
+    if (gridBtn && listBtn) {
+        if (isListViewEnabled) {
+            listBtn.classList.add('active');
+            gridBtn.classList.remove('active');
+        } else {
+            gridBtn.classList.add('active');
+            listBtn.classList.remove('active');
+        }
+    }
+}
+
+// ==========================================================================
 // LOGIC: HEADER MODIFICATIONS
 // ==========================================================================
 function processSubscriptionsHeader() {
-    if (!isTargetPage()) return;
+    if (!isTargetPage() || !isListViewEnabled) return; 
 
     const items = document.querySelectorAll('ytd-rich-item-renderer');
 
     items.forEach(item => {
-        // 1. CLONE CHANNEL NAME (If not already cloned)
+        // 1. CLONE CHANNEL NAME 
         if (!item.querySelector('.cloned-channel-name')) {
             const lockup = item.querySelector('.yt-lockup-view-model');
             const metadataModel = item.querySelector('yt-content-metadata-view-model');
@@ -236,10 +404,12 @@ function processVideoDescriptions() {
 }
 
 // ==========================================================================
-// LOGIC: INJECT WATCH LATER BUTTON (If Missing)
+// LOGIC: INJECT WATCH LATER BUTTON
 // ==========================================================================
 function processWatchLater() {
     // 1. Check if Watch Later link already exists
+    if (!isListViewEnabled) return; 
+
     const existingBtn = document.querySelector('a[href="/playlist?list=WL"]');
     if (existingBtn) return;
 
@@ -301,6 +471,8 @@ function processWatchLater() {
 // LOGIC: REMOVE ADS
 // ==========================================================================
 function removeAds() {
+    if (!isListViewEnabled) return; 
+    
     // Finds the specific ad tag and removes its parent container (the grid item)
     const adSlots = document.querySelectorAll('ytd-ad-slot-renderer');
     adSlots.forEach(slot => {
@@ -312,13 +484,13 @@ function removeAds() {
 }
 
 // ==========================================================================
-// LOGIC: TEMPORARY SIDEBAR INJECTION (Forces Grid to List Reflow)
+// LOGIC: TEMPORARY SIDEBAR INJECTION
 // ==========================================================================
 let hasTriggeredLayoutFix = false;
 let lastUrl = window.location.href;
 
 function injectTemporaryPanel() {
-    if (hasTriggeredLayoutFix) return;
+    if (hasTriggeredLayoutFix || !isListViewEnabled) return; 
 
     const primaryContainer = document.querySelector('ytd-two-column-browse-results-renderer #primary');
     if (!primaryContainer) return;
@@ -355,6 +527,9 @@ function injectTemporaryPanel() {
 
 // 1. WATCH FOR DOM CHANGES (Infinite Scroll / Initial Load)
 const observer = new MutationObserver((mutations) => {
+    
+    injectViewToggle();
+
     // Reset layout fix trigger on URL change (Fallback)
     if (window.location.href !== lastUrl) {
         lastUrl = window.location.href;
@@ -379,15 +554,18 @@ const observer = new MutationObserver((mutations) => {
             }
         }
 
-        removeAds();
-        processSubscriptionsHeader();
-        processVideoDescriptions();
-        processWatchLater();
+        if (isListViewEnabled) {
+            removeAds();
+            processSubscriptionsHeader();
+            processVideoDescriptions();
+            processWatchLater();
 
-        const items = document.querySelectorAll('ytd-rich-item-renderer');
-        if (items.length > 0) {
-            injectTemporaryPanel();
+            const items = document.querySelectorAll('ytd-rich-item-renderer');
+            if (items.length > 0) {
+                injectTemporaryPanel();
+            }
         }
+        injectViewToggle();
     }
 });
 
@@ -398,9 +576,12 @@ document.addEventListener('yt-navigate-finish', () => {
     // Force update internal state
     lastUrl = window.location.href;
     hasTriggeredLayoutFix = false;
+    injectViewToggle();
     
-    // Immediately trigger processing if on target page
-    if (isTargetPage()) {
+    // [UPDATED] Re-run applySettings to ensure we switch mode if URL changed (Home <-> Subs)
+    applySettings(cachedSettings);
+
+    if (isTargetPage() && isListViewEnabled) {
         removeAds();
         processSubscriptionsHeader();
         processVideoDescriptions();

@@ -20,12 +20,112 @@
 }
 
 /* ==========================================================================
-   STYLES
+   TOGGLE BUTTON UI
+   ========================================================================== */
+#view-toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding-left: 4px;
+    z-index: 9999; /* Ensure it's above standard elements */
+}
+
+/* --- HOME PAGE SPECIFIC STYLES --- */
+/* This forces the button to float on the right side of the Chips Bar */
+.home-header-mode {
+    position: absolute !important;
+    right: 0 !important;
+    top: 0 !important;
+    height: 100% !important;
+    
+    /* BACKGROUND IS CRITICAL: Hides the scrolling chips as they pass under */
+    background: var(--yt-spec-base-background) !important;
+    
+    /* Add a small shadow/fade to separate it from the scrolling chips */
+    box-shadow: -10px 0 15px -5px var(--yt-spec-base-background);
+    
+    /* Ensure it sits ON TOP of the chips (Chips usually have z-index ~100-200) */
+    z-index: 9999 !important; 
+}
+
+.view-toggle-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+    transition: opacity 0.2s, background 0.2s;
+}
+
+.view-toggle-btn:hover {
+    opacity: 1;
+    background: var(--yt-spec-badge-chip-background, rgba(255, 255, 255, 0.1));
+}
+
+.view-toggle-btn.active {
+    opacity: 1;
+    color: var(--yt-spec-call-to-action, #3ea6ff);
+}
+
+.view-toggle-btn.active svg {
+    fill: var(--yt-spec-call-to-action, #3ea6ff) !important;
+}
+
+.view-toggle-btn svg {
+    width: 24px;
+    height: 24px;
+    /* DYNAMIC COLOR: Ensures visibility in Light & Dark Mode */
+    fill: var(--yt-spec-text-primary) !important; 
+}
+
+/* ==========================================================================
+   HOME HEADER ALIGNMENT
+   Force the filter chips bar to match the list container width
    ========================================================================== */
 
-/* 1. GRID & LAYOUT RESET (Applied to BOTH Home and Subscriptions) */
-ytd-browse[page-subtype="subscriptions"] ytd-rich-grid-renderer,
-ytd-browse[page-subtype="home"] ytd-rich-grid-renderer {
+/* Constrain the inner chips wrapper, not the main bar */
+html.list-view-active ytd-browse[page-subtype="home"] #chips-wrapper {
+    max-width: var(--list-container-width) !important;
+    margin: 0 auto !important; /* Keeps chips centered/aligned if desired */
+}
+
+html.list-view-active ytd-browse[page-subtype="home"] ytd-feed-filter-chip-bar-renderer {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important; /* Center the bar */
+    box-sizing: border-box !important;
+}
+
+ytd-browse[page-subtype="home"] ytd-feed-filter-chip-bar-renderer {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important; /* Center the bar */
+    box-sizing: border-box !important;
+}
+
+ytd-browse[page-subtype="home"] #chips-content {
+    max-width: 50% !important;
+}
+
+/* Optional: Ensure the internal sticky header wrapper also aligns if present */
+html.list-view-active ytd-browse[page-subtype="home"] #header.ytd-rich-grid-renderer {
+    max-width: var(--list-container-width) !important;
+    margin: 0 !important;
+}
+
+/* ==========================================================================
+   LIST VIEW LOGIC
+   Only applies when html.list-view-active is present
+   ========================================================================== */
+
+/* 1. GRID & LAYOUT RESET */
+
+html.list-view-active ytd-browse[page-subtype="subscriptions"] ytd-rich-grid-renderer,
+html.list-view-active ytd-browse[page-subtype="home"] ytd-rich-grid-renderer {
     --ytd-rich-grid-items-per-row: 1 !important;
     --ytd-rich-grid-posts-per-row: 1 !important;
     width: 100% !important;
@@ -33,15 +133,15 @@ ytd-browse[page-subtype="home"] ytd-rich-grid-renderer {
     margin: 0 !important;
 }
 
-ytd-browse[page-subtype="subscriptions"] #contents,
-ytd-browse[page-subtype="home"] #contents {
+html.list-view-active ytd-browse[page-subtype="subscriptions"] #contents,
+html.list-view-active ytd-browse[page-subtype="home"] #contents {
     width: 100% !important;
     max-width: 100% !important;
 }
 
-/* 2. MAIN CARD CONTAINER - SHARED STYLES */
-ytd-browse[page-subtype="subscriptions"] ytd-rich-grid-renderer > #contents > ytd-rich-item-renderer,
-ytd-browse[page-subtype="home"] ytd-rich-grid-renderer > #contents > ytd-rich-item-renderer {
+/* 2. MAIN CARD CONTAINER */
+html.list-view-active ytd-browse[page-subtype="subscriptions"] ytd-rich-grid-renderer > #contents > ytd-rich-item-renderer,
+html.list-view-active ytd-browse[page-subtype="home"] ytd-rich-grid-renderer > #contents > ytd-rich-item-renderer {
     width: 100% !important;
     
     /* UPDATED: Now applies the slider variable to BOTH pages */
@@ -52,15 +152,14 @@ ytd-browse[page-subtype="home"] ytd-rich-grid-renderer > #contents > ytd-rich-it
     border-bottom: 1px solid #3F3F3F !important; 
 }
 
-/* Last child border removal */
-ytd-browse[page-subtype="subscriptions"] ytd-rich-grid-renderer > #contents > ytd-rich-item-renderer:last-child,
-ytd-browse[page-subtype="home"] ytd-rich-grid-renderer > #contents > ytd-rich-item-renderer:last-child {
+html.list-view-active ytd-browse[page-subtype="subscriptions"] ytd-rich-grid-renderer > #contents > ytd-rich-item-renderer:last-child,
+html.list-view-active ytd-browse[page-subtype="home"] ytd-rich-grid-renderer > #contents > ytd-rich-item-renderer:last-child {
     border-bottom: none !important;
 }
 
 /* CARD HEADER SETUP */
-ytd-browse[page-subtype="subscriptions"] ytd-rich-grid-renderer > #contents > ytd-rich-item-renderer .yt-lockup-view-model,
-ytd-browse[page-subtype="home"] ytd-rich-grid-renderer > #contents > ytd-rich-item-renderer .yt-lockup-view-model {
+html.list-view-active ytd-browse[page-subtype="subscriptions"] ytd-rich-grid-renderer > #contents > ytd-rich-item-renderer .yt-lockup-view-model,
+html.list-view-active ytd-browse[page-subtype="home"] ytd-rich-grid-renderer > #contents > ytd-rich-item-renderer .yt-lockup-view-model {
     display: flex !important;
     flex-direction: row !important;
     align-items: flex-start !important;
@@ -73,8 +172,8 @@ ytd-browse[page-subtype="home"] ytd-rich-grid-renderer > #contents > ytd-rich-it
 }
 
 /* 3. THUMBNAIL AREA */
-ytd-browse[page-subtype="subscriptions"] .yt-lockup-view-model__content-image,
-ytd-browse[page-subtype="home"] .yt-lockup-view-model__content-image {
+html.list-view-active ytd-browse[page-subtype="subscriptions"] .yt-lockup-view-model__content-image,
+html.list-view-active ytd-browse[page-subtype="home"] .yt-lockup-view-model__content-image {
     width: var(--thumbnail-width) !important;
     min-width: var(--thumbnail-width) !important;
     max-width: var(--thumbnail-width) !important;
@@ -89,24 +188,24 @@ ytd-browse[page-subtype="home"] .yt-lockup-view-model__content-image {
 }
 
 /* 4. METADATA RESET */
-ytd-browse[page-subtype="subscriptions"] .yt-lockup-view-model__metadata,
-ytd-browse[page-subtype="subscriptions"] yt-lockup-metadata-view-model,
-ytd-browse[page-subtype="subscriptions"] .yt-lockup-metadata-view-model,
-ytd-browse[page-subtype="subscriptions"] .yt-lockup-metadata-view-model__text-container,
-ytd-browse[page-subtype="subscriptions"] yt-content-metadata-view-model,
-ytd-browse[page-subtype="home"] .yt-lockup-view-model__metadata,
-ytd-browse[page-subtype="home"] yt-lockup-metadata-view-model,
-ytd-browse[page-subtype="home"] .yt-lockup-metadata-view-model,
-ytd-browse[page-subtype="home"] .yt-lockup-metadata-view-model__text-container,
-ytd-browse[page-subtype="home"] yt-content-metadata-view-model {
+html.list-view-active ytd-browse[page-subtype="subscriptions"] .yt-lockup-view-model__metadata,
+html.list-view-active ytd-browse[page-subtype="subscriptions"] yt-lockup-metadata-view-model,
+html.list-view-active ytd-browse[page-subtype="subscriptions"] .yt-lockup-metadata-view-model,
+html.list-view-active ytd-browse[page-subtype="subscriptions"] .yt-lockup-metadata-view-model__text-container,
+html.list-view-active ytd-browse[page-subtype="subscriptions"] yt-content-metadata-view-model,
+html.list-view-active ytd-browse[page-subtype="home"] .yt-lockup-view-model__metadata,
+html.list-view-active ytd-browse[page-subtype="home"] yt-lockup-metadata-view-model,
+html.list-view-active ytd-browse[page-subtype="home"] .yt-lockup-metadata-view-model,
+html.list-view-active ytd-browse[page-subtype="home"] .yt-lockup-metadata-view-model__text-container,
+html.list-view-active ytd-browse[page-subtype="home"] yt-content-metadata-view-model {
     position: static !important;
     transform: none !important;
     contain: none !important;
 }
 
 /* Title Styling */
-ytd-browse[page-subtype="subscriptions"] .yt-lockup-metadata-view-model__title,
-ytd-browse[page-subtype="home"] .yt-lockup-metadata-view-model__title {
+html.list-view-active ytd-browse[page-subtype="subscriptions"] .yt-lockup-metadata-view-model__title,
+html.list-view-active ytd-browse[page-subtype="home"] .yt-lockup-metadata-view-model__title {
     font-size: var(--title-font-size) !important;
     line-height: 1.3 !important;
     margin-bottom: 6px !important;
@@ -115,8 +214,8 @@ ytd-browse[page-subtype="home"] .yt-lockup-metadata-view-model__title {
 }
 
 /* 5. HEADER ELEMENTS (Avatar) */
-ytd-browse[page-subtype="subscriptions"] .yt-lockup-metadata-view-model__avatar,
-ytd-browse[page-subtype="home"] .yt-lockup-metadata-view-model__avatar {
+html.list-view-active ytd-browse[page-subtype="subscriptions"] .yt-lockup-metadata-view-model__avatar,
+html.list-view-active ytd-browse[page-subtype="home"] .yt-lockup-metadata-view-model__avatar {
     position: absolute !important;
     top: 0 !important;
     left: 0 !important;
@@ -127,8 +226,8 @@ ytd-browse[page-subtype="home"] .yt-lockup-metadata-view-model__avatar {
     border-radius: 50% !important;
 }
 
-ytd-browse[page-subtype="subscriptions"] .custom-avatar-link,
-ytd-browse[page-subtype="home"] .custom-avatar-link {
+html.list-view-active ytd-browse[page-subtype="subscriptions"] .custom-avatar-link,
+html.list-view-active ytd-browse[page-subtype="home"] .custom-avatar-link {
     display: block !important;
     width: 100% !important;
     height: 100% !important;
@@ -136,17 +235,17 @@ ytd-browse[page-subtype="home"] .custom-avatar-link {
     cursor: pointer !important;
 }
 
-ytd-browse[page-subtype="subscriptions"] .yt-lockup-metadata-view-model__avatar img,
-ytd-browse[page-subtype="home"] .yt-lockup-metadata-view-model__avatar img {
+html.list-view-active ytd-browse[page-subtype="subscriptions"] .yt-lockup-metadata-view-model__avatar img,
+html.list-view-active ytd-browse[page-subtype="home"] .yt-lockup-metadata-view-model__avatar img {
     width: 100% !important;
     height: 100% !important;
     display: block !important;
     border-radius: 50% !important;
 }
 
-/* Cloned Channel Name Header (Top) */
-ytd-browse[page-subtype="subscriptions"] .cloned-channel-name,
-ytd-browse[page-subtype="home"] .cloned-channel-name {
+/* Cloned Channel Name Header */
+html.list-view-active ytd-browse[page-subtype="subscriptions"] .cloned-channel-name,
+html.list-view-active ytd-browse[page-subtype="home"] .cloned-channel-name {
     position: absolute !important;
     top: 0 !important;
     left: 42px !important;
@@ -159,10 +258,10 @@ ytd-browse[page-subtype="home"] .cloned-channel-name {
     pointer-events: auto !important;
 }
 
-ytd-browse[page-subtype="subscriptions"] .cloned-channel-name a,
-ytd-browse[page-subtype="subscriptions"] .cloned-channel-name span,
-ytd-browse[page-subtype="home"] .cloned-channel-name a,
-ytd-browse[page-subtype="home"] .cloned-channel-name span {
+html.list-view-active ytd-browse[page-subtype="subscriptions"] .cloned-channel-name a,
+html.list-view-active ytd-browse[page-subtype="subscriptions"] .cloned-channel-name span,
+html.list-view-active ytd-browse[page-subtype="home"] .cloned-channel-name a,
+html.list-view-active ytd-browse[page-subtype="home"] .cloned-channel-name span {
     color: var(--yt-spec-text-primary) !important;
     font-weight: 500 !important;
     font-size: var(--title-font-size) !important;
@@ -171,20 +270,20 @@ ytd-browse[page-subtype="home"] .cloned-channel-name span {
     line-height: 1 !important;
 }
 
-ytd-browse[page-subtype="subscriptions"] .cloned-channel-name span[role="separator"],
-ytd-browse[page-subtype="home"] .cloned-channel-name span[role="separator"] {
+html.list-view-active ytd-browse[page-subtype="subscriptions"] .cloned-channel-name span[role="separator"],
+html.list-view-active ytd-browse[page-subtype="home"] .cloned-channel-name span[role="separator"] {
     display: none !important;
 }
 
 /* ORIGINAL METADATA (Bottom) */
-ytd-browse[page-subtype="subscriptions"] yt-content-metadata-view-model,
-ytd-browse[page-subtype="home"] yt-content-metadata-view-model {
+html.list-view-active ytd-browse[page-subtype="subscriptions"] yt-content-metadata-view-model,
+html.list-view-active ytd-browse[page-subtype="home"] yt-content-metadata-view-model {
     display: block !important;
     width: 100% !important;
 }
 
-ytd-browse[page-subtype="subscriptions"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name),
-ytd-browse[page-subtype="home"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name) {
+html.list-view-active ytd-browse[page-subtype="subscriptions"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name),
+html.list-view-active ytd-browse[page-subtype="home"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name) {
     display: inline-flex !important;
     align-items: baseline !important;
     margin: 0 !important;
@@ -194,38 +293,43 @@ ytd-browse[page-subtype="home"] yt-content-metadata-view-model .yt-content-metad
     white-space: nowrap !important;
 }
 
-/* Force children to inherit meta font size */
-ytd-browse[page-subtype="subscriptions"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name) *,
-ytd-browse[page-subtype="home"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name) * {
+html.list-view-active ytd-browse[page-subtype="subscriptions"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name) *,
+html.list-view-active ytd-browse[page-subtype="home"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name) * {
     font-size: var(--meta-font-size) !important;
     line-height: 1.4 !important;
 }
 
-ytd-browse[page-subtype="subscriptions"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name):first-of-type,
-ytd-browse[page-subtype="home"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name):first-of-type {
+html.list-view-active ytd-browse[page-subtype="subscriptions"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name):first-of-type,
+html.list-view-active ytd-browse[page-subtype="home"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name):first-of-type {
     margin-right: 8px !important;
 }
 
-ytd-browse[page-subtype="subscriptions"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name) a,
-ytd-browse[page-subtype="home"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name) a {
+html.list-view-active ytd-browse[page-subtype="subscriptions"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name) a,
+html.list-view-active ytd-browse[page-subtype="home"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name) a {
     color: #aaa !important;
     font-weight: 400 !important;
     text-decoration: none !important;
 }
 
-ytd-browse[page-subtype="subscriptions"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name) a:hover,
-ytd-browse[page-subtype="home"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name) a:hover {
+html.list-view-active ytd-browse[page-subtype="subscriptions"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name) a:hover,
+html.list-view-active ytd-browse[page-subtype="home"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name) a:hover {
     color: #fff !important;
 }
 
-ytd-browse[page-subtype="subscriptions"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name) span[role="separator"],
-ytd-browse[page-subtype="home"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name) span[role="separator"] {
+html.list-view-active ytd-browse[page-subtype="subscriptions"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name) span[role="separator"],
+html.list-view-active ytd-browse[page-subtype="home"] yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row:not(.cloned-channel-name) span[role="separator"] {
     display: inline-block !important; 
     margin: 0 4px !important;
 }
 
-/* 6. DESCRIPTION STYLES */
+/* 6. DESCRIPTION STYLES - HIDE IN GRID MODE */
 .custom-description-container {
+    display: none; /* Hidden by default */
+}
+
+/* Only show in list view */
+html.list-view-active .custom-description-container {
+    display: block;
     width: 100%;
     margin-top: 6px;
     box-sizing: border-box;
@@ -237,7 +341,7 @@ ytd-browse[page-subtype="home"] yt-content-metadata-view-model .yt-content-metad
     padding-bottom: 0; 
 }
 
-.custom-description {
+html.list-view-active .custom-description {
     display: -webkit-box;
     -webkit-line-clamp: 3;
     line-clamp: 3;
@@ -255,15 +359,13 @@ ytd-browse[page-subtype="home"] yt-content-metadata-view-model .yt-content-metad
     white-space: pre-wrap; 
 }
 
-/* State: Expanded */
-.custom-description.expanded {
+html.list-view-active .custom-description.expanded {
     -webkit-line-clamp: unset !important;
     line-clamp: unset !important;
     overflow: visible !important;
 }
 
-/* Toggle Button - FIXED LOCATION (Calculated from Top) */
-.desc-toggle-btn {
+html.list-view-active .desc-toggle-btn {
     position: absolute !important;
     
     /* X-AXIS: Align Right */
@@ -299,39 +401,38 @@ ytd-browse[page-subtype="home"] yt-content-metadata-view-model .yt-content-metad
     transition: background-color 0.2s ease;
 }
 
-.desc-toggle-btn:hover {
+html.list-view-active .desc-toggle-btn:hover {
     background-color: var(--yt-spec-badge-chip-background-hover, rgba(255, 255, 255, 0.2));
 }
 
 /* 7. MISC */
-ytd-browse[page-subtype="subscriptions"] .yt-lockup-metadata-view-model__menu-button,
-ytd-browse[page-subtype="home"] .yt-lockup-metadata-view-model__menu-button {
+html.list-view-active ytd-browse[page-subtype="subscriptions"] .yt-lockup-metadata-view-model__menu-button,
+html.list-view-active ytd-browse[page-subtype="home"] .yt-lockup-metadata-view-model__menu-button {
     position: absolute !important;
     top: calc(var(--header-height) + var(--channel-info-padding-bottom)) !important;
     right: 0 !important;
 }
 
-/* Section Renderer Max-Width: NOW APPLIES TO BOTH */
-ytd-browse[page-subtype="subscriptions"] ytd-rich-section-renderer > #content,
-ytd-browse[page-subtype="home"] ytd-rich-section-renderer > #content {
+/* Section Renderer Max-Width */
+html.list-view-active ytd-browse[page-subtype="subscriptions"] ytd-rich-section-renderer > #content,
+html.list-view-active ytd-browse[page-subtype="home"] ytd-rich-section-renderer > #content {
     max-width: var(--list-container-width) !important;
     margin: 0 auto !important;
 }
 
-ytd-browse[page-subtype="subscriptions"] ytd-rich-section-renderer,
-ytd-browse[page-subtype="subscriptions"] ytd-shelf-renderer,
-ytd-browse[page-subtype="subscriptions"] ytd-shelf-renderer h2,
-ytd-browse[page-subtype="home"] ytd-rich-section-renderer,
-ytd-browse[page-subtype="home"] ytd-shelf-renderer,
-ytd-browse[page-subtype="home"] ytd-shelf-renderer h2 {
+html.list-view-active ytd-browse[page-subtype="subscriptions"] ytd-rich-section-renderer,
+html.list-view-active ytd-browse[page-subtype="subscriptions"] ytd-shelf-renderer,
+html.list-view-active ytd-browse[page-subtype="subscriptions"] ytd-shelf-renderer h2,
+html.list-view-active ytd-browse[page-subtype="home"] ytd-rich-section-renderer,
+html.list-view-active ytd-browse[page-subtype="home"] ytd-shelf-renderer,
+html.list-view-active ytd-browse[page-subtype="home"] ytd-shelf-renderer h2 {
     margin: 0 !important;
     padding: 0 !important;
 }
 
 /* 8. DYNAMIC ATTACHMENT / NOTIFY BUTTON WIDTH */
-/* Overrides inline styles often present on these dynamic elements */
-lockup-attachments-view-model,
-.ytLockupAttachmentsViewModelHost {
+html.list-view-active lockup-attachments-view-model,
+html.list-view-active .ytLockupAttachmentsViewModelHost {
     width: var(--notify-width) !important;
     max-width: 100% !important;
 }

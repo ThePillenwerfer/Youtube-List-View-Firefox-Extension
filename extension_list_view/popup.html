@@ -44,6 +44,25 @@
       border-radius: 4px;
       text-align: right;
     }
+    
+    /* --- NEW ICON STYLES --- */
+    .icon-row {
+      display: flex;
+      align-items: center;
+      gap: 20px; /* Space between icons */
+      padding-top: 5px;
+    }
+    .mode-icon {
+      width: 24px;
+      height: 24px;
+      fill: #444; /* Inactive color (dark grey) */
+      transition: fill 0.3s ease;
+    }
+    .mode-icon.active {
+      fill: #3ea6ff; /* Active color (YouTube Blue) */
+    }
+    /* ----------------------- */
+
     button.reset {
       width: 100%;
       padding: 8px;
@@ -65,6 +84,36 @@
 </head>
 <body>
   <h2>List View Settings</h2>
+
+  <div class="control-group">
+    <label>Current View Mode</label>
+    <div class="icon-row">
+      <div id="icon-grid" class="mode-icon" title="Grid View Active">
+        <svg viewBox="0 0 24 24" height="24" width="24">
+          <rect x="2" y="4" width="5" height="7" rx="1"></rect>
+          <rect x="2" y="13" width="5" height="7" rx="1"></rect>
+          <rect x="9.5" y="4" width="5" height="7" rx="1"></rect>
+          <rect x="9.5" y="13" width="5" height="7" rx="1"></rect>
+          <rect x="17" y="4" width="5" height="7" rx="1"></rect>
+          <rect x="17" y="13" width="5" height="7" rx="1"></rect>
+        </svg>
+      </div>
+
+      <div id="icon-list" class="mode-icon" title="List View Active">
+        <svg viewBox="0 0 24 24" height="24" width="24">
+          <rect x="2" y="4" width="5" height="4" rx="1"></rect>
+          <rect x="9" y="4" width="13" height="4" rx="1"></rect>
+          
+          <rect x="2" y="10" width="5" height="4" rx="1"></rect>
+          <rect x="9" y="10" width="13" height="4" rx="1"></rect>
+          
+          <rect x="2" y="16" width="5" height="4" rx="1"></rect>
+          <rect x="9" y="16" width="13" height="4" rx="1"></rect>
+        </svg>
+      </div>
+      
+    </div>
+  </div>
 
   <div class="control-group">
     <label>Container Width (%)</label>

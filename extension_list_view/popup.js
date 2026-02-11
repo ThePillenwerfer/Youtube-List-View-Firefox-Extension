@@ -5,7 +5,9 @@ const defaults = {
     titleFontSize: 13, // pt
     metaFontSize: 10,  // pt
     notifyWidth: 150,   // px
-    highlightLinks: true
+    highlightLinks: true,
+    viewModeHome: 'list', // New Default
+    viewModeSubs: 'list'  // New Default
 };
 
 // Elements
@@ -20,10 +22,17 @@ const inputs = {
     metaFontSizeSlider: document.getElementById('metaFontSizeSlider'),
     notifyWidth: document.getElementById('notifyWidth'),
     notifyWidthSlider: document.getElementById('notifyWidthSlider'),
-    highlightLinks: document.getElementById('highlightLinks')
+    highlightLinks: document.getElementById('highlightLinks'),
+    // New Icons
+    iconList: document.getElementById('icon-list'),
+    iconGrid: document.getElementById('icon-grid')
 };
 
-// Helper: Get current values from DOM
+// Variables to store current view modes
+let storedSettings = { ...defaults };
+let activePageContext = 'home'; // 'home' or 'subs'
+
+// Helper: Get current values from DOM (and merge with stored view modes)
 function getCurrentSettings() {
     return {
         listContainerWidth: inputs.listContainerWidth.value,
@@ -31,8 +40,31 @@ function getCurrentSettings() {
         titleFontSize: inputs.titleFontSize.value,
         metaFontSize: inputs.metaFontSize.value,
         notifyWidth: inputs.notifyWidth.value,
-        highlightLinks: inputs.highlightLinks.checked
+        highlightLinks: inputs.highlightLinks.checked,
+        
+        // Pass back the stored modes (Popup doesn't change these, only displays them)
+        viewModeHome: storedSettings.viewModeHome,
+        viewModeSubs: storedSettings.viewModeSubs
     };
+}
+
+// Helper: Update UI Icons based on current context
+function updateIconState() {
+    let mode = 'list';
+    
+    if (activePageContext === 'subs') {
+        mode = storedSettings.viewModeSubs;
+    } else {
+        mode = storedSettings.viewModeHome;
+    }
+
+    if (mode === 'grid') {
+        inputs.iconGrid.classList.add('active');
+        inputs.iconList.classList.remove('active');
+    } else {
+        inputs.iconList.classList.add('active');
+        inputs.iconGrid.classList.remove('active');
+    }
 }
 
 // Highlight Links Toggle
@@ -117,7 +149,7 @@ function setupControl(textInput, sliderInput) {
     });
 }
 
-// Initialize
+// Initialize Controls
 setupControl(inputs.listContainerWidth, inputs.listContainerWidthSlider);
 setupControl(inputs.thumbnailWidth, inputs.thumbnailWidthSlider);
 setupControl(inputs.titleFontSize, inputs.titleFontSizeSlider);
@@ -126,35 +158,57 @@ setupControl(inputs.notifyWidth, inputs.notifyWidthSlider);
 
 // Load saved settings
 document.addEventListener('DOMContentLoaded', () => {
-    chrome.storage.sync.get(defaults, (items) => {
-        for (const key in items) {
-            // Handle Checkbox
-            if (key === 'highlightLinks' && inputs[key]) {
-                inputs[key].checked = items[key];
-            }
-            // Handle Inputs/Sliders
-            else {
-                if (inputs[key]) inputs[key].value = items[key];
-                if (inputs[key + 'Slider']) inputs[key + 'Slider'].value = items[key];
+    // 1. Determine Context (Are we looking at Subs or Home?)
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        if (tabs && tabs.length > 0) {
+            const url = tabs[0].url || '';
+            if (url.includes('/feed/subscriptions')) {
+                activePageContext = 'subs';
+            } else {
+                activePageContext = 'home';
             }
         }
+
+        // 2. Load Settings
+        chrome.storage.sync.get(defaults, (items) => {
+            storedSettings = items; // Cache for logic
+            
+            // Update Icons based on context
+            updateIconState();
+
+            // Update Inputs
+            for (const key in items) {
+                if (key === 'highlightLinks' && inputs[key]) {
+                    inputs[key].checked = items[key];
+                }
+                else {
+                    if (inputs[key]) inputs[key].value = items[key];
+                    if (inputs[key + 'Slider']) inputs[key + 'Slider'].value = items[key];
+                }
+            }
+        });
     });
 });
 
 // Reset
 document.getElementById('resetBtn').addEventListener('click', () => {
-    chrome.storage.sync.set(defaults, () => {
-        for (const key in defaults) {
-            // Handle Checkbox
+    // Keep current modes intact or reset them? Usually reset implies FULL reset.
+    // Resetting to 'list' for both as per defaults.
+    const resetSettings = { ...defaults };
+    storedSettings = resetSettings; // Update local cache
+    
+    chrome.storage.sync.set(resetSettings, () => {
+        for (const key in resetSettings) {
             if (key === 'highlightLinks' && inputs[key]) {
-                inputs[key].checked = defaults[key];
+                inputs[key].checked = resetSettings[key];
             }
-            // Handle Inputs/Sliders
+            // Handle Checkboxes and Sliders
             else {
-                if (inputs[key]) inputs[key].value = defaults[key];
-                if (inputs[key + 'Slider']) inputs[key + 'Slider'].value = defaults[key];
+                if (inputs[key]) inputs[key].value = resetSettings[key];
+                if (inputs[key + 'Slider']) inputs[key + 'Slider'].value = resetSettings[key];
             }
         }
+        updateIconState();
         sendToTab();
     });
 });
