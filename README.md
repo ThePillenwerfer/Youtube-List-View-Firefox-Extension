@@ -7,18 +7,22 @@ Modern YouTube forces a "Rich Grid" layout that hides video descriptions and tru
 ## 🚀 Features
 
 * **Force List View:** Converts the multi-column grid into a single-column list layout on both the **Subscriptions** and **Home** feeds.
-* **Video Descriptions:** Automatically fetches and displays the video description (short snippet) for every video, which is normally hidden in Grid view.
+* **Smart View Toggles:** Injects **Grid** and **List** icon buttons directly onto the YouTube page, allowing you to switch layouts instantly. The extension remembers your preference separately for the Home and Subscriptions feeds.
+* **Video Descriptions:** Automatically fetches and displays the video description (short snippet) for every video.
+    * **Link Highlighting:** Detects URLs in descriptions and makes them clickable (customizable via settings).
+* **Clean Interface:** Automatically removes **Ad** slots from the feed for a clutter-free experience.
+* **Watch Later Shortcut:** Restores the missing "Watch Later" button to the sidebar if it's not present.
 * **Customizable Layout:** A popup menu allows you to adjust:
     * **Container Width:** Control how wide the list is on your screen (50% - 100%).
     * **Thumbnail Size:** Resize video thumbnails (150px - 400px).
     * **Typography:** Adjust the font size for Video Titles and Metadata/Descriptions.
-* **Live Preview:** Adjustments made in the popup are reflected instantly on the active tab without needing a reload.
-* **Layout Fixes:** Includes logic to handle YouTube's Single Page Application (SPA) navigation and layout reflows.
+    * **Notify Button Width:** Adjust the spacing for the Subscribe/Notification button area.
+* **Live Preview:** Adjustments made in the popup are reflected instantly on the active tab.
 
 ## 📂 File Structure
 
 * `manifest.json` - Extension configuration (MV3).
-* `content.js` - Main logic for DOM manipulation, fetching descriptions, and injecting layout fixes.
+* `content.js` - Main logic for DOM manipulation, fetching descriptions, injecting toggle buttons, and removing ads.
 * `styles.css` - CSS overrides to force the grid into a list and apply user settings.
 * `popup.html` & `popup.js` - The settings interface for customizing the view.
 
@@ -36,22 +40,24 @@ Since this is a developer build, you can install it via "Load Unpacked":
 
 ## ⚙️ Usage
 
-1.  Navigate to [YouTube.com](https://www.youtube.com).
-2.  The extension will automatically convert the Home or Subscriptions feed into a list.
+1.  Navigate to [YouTube.com](https://www.youtube.com) or your Subscriptions feed.
+2.  **To switch views:** Look for the **Grid/List icons** (near the "Manage" button on Subscriptions or the Filter Chips on Home) to toggle the layout instantly.
 3.  **To customize the look:**
     * Click the extension icon in the Chrome toolbar.
-    * Use the **sliders** to adjust the width, thumbnail size, and font sizes.
+    * Use the **sliders** to adjust width, thumbnail size, font sizes, and notify button width.
+    * Toggle **Highlight Links** to colorize URLs in descriptions.
     * Changes apply immediately.
-    * Click **Reset to Defaults** if you want to revert to the original optimized settings.
+    * Click **Reset to Defaults** to revert to the original optimized settings.
 
 ## 🔧 Technical Notes
 
 * **Permissions:**
-    * `storage`: Used to save your UI preferences (width, font size, etc.) so they persist across sessions.
+    * `storage`: Used to save UI preferences and View Mode states (Grid/List) per feed.
     * `host_permissions` (`https://www.youtube.com/*`): Required to inject the content script and styles into YouTube.
 * **Performance:**
     * The extension uses a `MutationObserver` to detect when YouTube loads new videos (infinite scroll) and applies styles dynamically.
-    * Video descriptions are fetched via individual `fetch()` requests to the video URL to parse the meta description tag.
+    * Video descriptions are fetched via individual `fetch()` requests to the video URL to parse the meta description tag, with caching to prevent duplicate requests.
+    * Includes logic to handle YouTube's Single Page Application (SPA) navigation and layout reflows.
 
 ## 📈 Star History
 
